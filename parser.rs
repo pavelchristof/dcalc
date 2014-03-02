@@ -138,32 +138,99 @@ impl<R: Reader> Parser<R> {
         }
     }
     
-    /// Parses an operand: a number, an 'x' identifier or an bracketed expression.
+    /// Parses an operand: a number, an 'x' identifier, a build-in function or an bracketed expression.
     fn operand(&mut self) -> Result<~DiffFunc, ~str> {
-        match self.tokenizer.take() {
+        match self.tokenizer.peek() {
             // Number
-            Some(tokenizer::Number(f)) => Ok(~func::Constant(f)),
+            Some(tokenizer::Number(f)) => {
+                self.tokenizer.take();
+                Ok(~func::Constant(f))
+            },
             
             // Id
             Some(tokenizer::Id(s)) => {
                 if s == ~"x" {
+                    self.tokenizer.take();
                     Ok(~func::Power(1.0))
                 } else {
                     Err(format!("Invalid identifier. Use 'x' as the variable name."))
                 }
             },
             
-            // ( #expression )
-            Some(tokenizer::OpenBracket) => match self.expression() {
-                Ok(expr) => {
-                    if self.consume(tokenizer::CloseBracket) {
-                        Ok(expr)
-                    } else {
-                        Err(format!("Expected ) token, got {}.", self.tokenizer.peek().to_str()))
+            // Exp #operand
+            Some(tokenizer::Exp) => {
+                self.tokenizer.take();
+                self.operand().bind(|expr| Ok(
+                    ~func::Compose {
+                        outer: ~func::Exp,
+                        inner: expr
                     }
-                },
-                Err(s)   => Err(s)
+                ))
             },
+            
+            // Ln #operand
+            Some(tokenizer::Ln) => {
+                self.tokenizer.take();
+                self.operand().bind(|expr| Ok(
+                    ~func::Compose {
+                        outer: ~func::Ln,
+                        inner: expr
+                    }
+                ))
+            },
+            
+            // Sin #operand
+            Some(tokenizer::Sin) => {
+                self.tokenizer.take();
+                self.operand().bind(|expr| Ok(
+                    ~func::Compose {
+                        outer: ~func::Sin,
+                        inner: expr
+                    }
+                ))
+            },
+            
+            // Cos #operand
+            Some(tokenizer::Cos) => {
+                self.tokenizer.take();
+                self.operand().bind(|expr| Ok(
+                    ~func::Compose {
+                        outer: ~func::Cos,
+                        inner: expr
+                    }
+                ))
+            },
+            
+            // Tg #operand
+            Some(tokenizer::Tg) => {
+                self.tokenizer.take();
+                self.operand().bind(|expr| Ok(
+                    ~func::Compose {
+                        outer: ~func::Div {
+                            left: ~func::Sin,
+                            right: ~func::Cos
+                        },
+                        inner: expr
+                    }
+                ))
+            },
+            
+            // Ctg #operand
+            Some(tokenizer::Ctg) => {
+                self.tokenizer.take();
+                self.operand().bind(|expr| Ok(
+                    ~func::Compose {
+                        outer: ~func::Div {
+                            left: ~func::Cos,
+                            right: ~func::Sin
+                        },
+                        inner: expr
+                    }
+                ))
+            },
+            
+            // #bracket_expr
+            Some(tokenizer::OpenBracket) => self.bracket_expr(),
             
             // errors
             Some(t) => Err(format!("Expected an operand, got {}.", t.to_str())),
@@ -171,18 +238,29 @@ impl<R: Reader> Parser<R> {
         }
     }
     
-    /// Tries to consume a token.
-    fn consume(&mut self, token: Token) -> bool {
+    /// Parses a bracketed expression.
+    fn bracket_expr(&mut self) -> Result<~DiffFunc, ~str> {
+        self.expect(tokenizer::OpenBracket).bind(|_| 
+            self.expression().bind(|expr|
+                self.expect(tokenizer::CloseBracket).bind_with(expr, |expr, _|
+                    Ok(expr)
+                )
+            )
+        )
+    }
+    
+    /// Consumes a token or fails.
+    fn expect(&mut self, token: Token) -> Result<(), ~str> {
         match self.tokenizer.peek() {
             Some(t) => {
                 if token == t {
                     self.tokenizer.take();
-                    true
+                    Ok(())
                 } else {
-                    false
+                    Err(format!("Expected {} token, got {}.", token.to_str(), t.to_str()))
                 }
             },
-            None => false
+            None => Err(format!("Expected {} token, got eof.", token.to_str()))
         }
     }
 }

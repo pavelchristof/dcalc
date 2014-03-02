@@ -2,6 +2,7 @@
 
 use std::io::buffered::BufferedReader;
 use std::str::from_char;
+use std::ascii::StrAsciiExt;
 
 /// A token.
 #[deriving(Clone, ToStr, Eq)]
@@ -149,7 +150,7 @@ impl<R: Reader> Tokenizer<R> {
             s.push_char(self.take_char().unwrap());
         }
     
-        match s {
+        match s.to_ascii_lower() {
             // Match build-in functions.
             ~"exp" => Some(Exp),
             ~"ln"  => Some(Ln),
