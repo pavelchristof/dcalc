@@ -2,6 +2,7 @@
 
 #[crate_id = "dcalc#0.1"];
 #[comment = "Derivative calculator"];
+#[feature(struct_variant)];
 
 use std::io::buffered::BufferedReader;
 use std::io::stdin;

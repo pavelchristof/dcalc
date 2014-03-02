@@ -62,7 +62,7 @@ impl<R: Reader> Parser<R> {
             Some(tokenizer::Plus) => {
                 self.tokenizer.take();
                 self.md_ops().bind_with(left, |left, right| self.pm_ops_tail(
-                    ~func::Plus { left: left, right: right } as ~DiffFunc
+                    ~func::Plus { left: left, right: right }
                 ))
             },
             
@@ -70,7 +70,7 @@ impl<R: Reader> Parser<R> {
             Some(tokenizer::Minus) => {
                 self.tokenizer.take();
                 self.md_ops().bind_with(left, |left, right| self.pm_ops_tail(
-                    ~func::Minus { left: left, right: right } as ~DiffFunc
+                    ~func::Minus { left: left, right: right }
                 ))
             },
             
@@ -91,7 +91,7 @@ impl<R: Reader> Parser<R> {
             Some(tokenizer::Mul) => {
                 self.tokenizer.take();
                 self.power_ops().bind_with(left, |left, right| self.md_ops_tail(
-                    ~func::Mul { left: left, right: right } as ~DiffFunc
+                    ~func::Mul { left: left, right: right }
                 ))
             },
             
@@ -99,7 +99,7 @@ impl<R: Reader> Parser<R> {
             Some(tokenizer::Div) => {
                 self.tokenizer.take();
                 self.power_ops().bind_with(left, |left, right| self.md_ops_tail(
-                    ~func::Div { left: left, right: right } as ~DiffFunc
+                    ~func::Div { left: left, right: right }
                 ))
             },
             
@@ -121,15 +121,15 @@ impl<R: Reader> Parser<R> {
                 self.tokenizer.take();
                 self.operand().bind_with(left, |left, right| self.power_ops_tail(
                     ~func::Compose {
-                        outer: ~func::Exp as ~DiffFunc,
+                        outer: ~func::Exp,
                         inner: ~func::Mul {
                             left: ~func::Compose {
-                                outer: ~func::Ln as ~DiffFunc,
+                                outer: ~func::Ln,
                                 inner: left
-                            } as ~DiffFunc,
+                            },
                             right: right
-                        } as ~DiffFunc
-                    } as ~DiffFunc
+                        }
+                    }
                 ))
             }
             
@@ -142,12 +142,12 @@ impl<R: Reader> Parser<R> {
     fn operand(&mut self) -> Result<~DiffFunc, ~str> {
         match self.tokenizer.take() {
             // Number
-            Some(tokenizer::Number(f)) => Ok(~func::Constant { value: f } as ~DiffFunc),
+            Some(tokenizer::Number(f)) => Ok(~func::Constant(f)),
             
             // Id
             Some(tokenizer::Id(s)) => {
                 if s == ~"x" {
-                    Ok(~func::Identity as ~DiffFunc)
+                    Ok(~func::Power(1.0))
                 } else {
                     Err(format!("Invalid identifier. Use 'x' as the variable name."))
                 }
