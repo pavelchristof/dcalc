@@ -1,7 +1,7 @@
 //! Differentiable functions.
 
 /// An Differentiable function.
-#[deriving(Clone)]
+#[deriving(Clone, Eq)]
 pub enum DiffFunc {
     Exp,
     Ln,
@@ -27,8 +27,8 @@ impl DiffFunc {
             Sin => format!("sin({})", arg),
             Cos => format!("cos({})", arg),
             
-            Constant(f) => f.to_str(),
-            Power(f) => format!("({}^{})", arg, f),
+            Constant(f) => if f >= 0.0 { format!("{}", f) } else { format!("({})", f) },
+            Power(f) => if f == 1.0 { arg.to_owned() } else { format!("({}^{})", arg, f) },
             
             Plus { left: ref l, right: ref r } => format!("({} + {})", l.to_str(arg), r.to_str(arg)),
             Minus { left: ref l, right: ref r } => format!("({} - {})", l.to_str(arg), r.to_str(arg)),
@@ -42,7 +42,7 @@ impl DiffFunc {
     pub fn derivative(&self) -> DiffFunc {
         match *self {
             Exp => Exp,
-            Ln  => Div { left: ~Constant(1.0), right: ~Power(1.0) },
+            Ln  => Power(-1.0),
             Sin => Cos,
             Cos => Mul { left: ~Constant(-1.0), right: ~Sin },
             

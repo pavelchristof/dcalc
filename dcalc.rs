@@ -12,11 +12,13 @@ use std::io::mem::MemReader;
 use func::DiffFunc;
 use tokenizer::{invalid_token, Ignore};
 use parser::Parser;
+use simplify::Simplify;
 
 mod func;
 mod monad;
 mod parser;
 mod tokenizer;
+mod simplify;
 
 /// Parse a string into a function.
 fn parse(s: &str) -> Result<~DiffFunc, ~str> {
@@ -27,7 +29,7 @@ fn parse(s: &str) -> Result<~DiffFunc, ~str> {
 /// Parses a string and computes its derivative.
 fn interpret(s: &str) {
     match parse(s) {
-        Ok(f)  => println!("{}", f.derivative().to_str("x")),
+        Ok(f)  => println!("{}", f.simplify().derivative().simplify().to_str("x")),
         Err(s) => println!("Error: {}", s)
     }
 }

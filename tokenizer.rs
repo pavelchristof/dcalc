@@ -101,7 +101,17 @@ impl<R: Reader> Tokenizer<R> {
             Some('(') => Some(OpenBracket),
             Some(')') => Some(CloseBracket),
             Some('+') => Some(Plus),
-            Some('-') => Some(Minus),
+            Some('-') => {
+                // Peek the next non-whitespace character.
+                while self.peek_char().map_or(false, |ch| ch.is_whitespace()) {
+                    self.take_char();
+                }
+                if self.peek_char().map_or(false, |ch| ch.is_digit()) {
+                    self.read_number('-')
+                } else {
+                    Some(Minus)
+                }
+            },
             Some('*') => Some(Mul),
             Some('/') => Some(Div),
             Some('^') => Some(Power),
